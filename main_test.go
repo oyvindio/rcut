@@ -35,10 +35,10 @@ func TestParseFieldArgsNotAnInt(t *testing.T) {
 	}
 }
 
-func TestParseFieldArgs(t *testing.T) {
+func TestParseFieldArgsEmpty(t *testing.T) {
 	bogus := ""
 	_, err := parseFieldArgs(bogus)
 	if err == nil {
-		t.Errorf("parseFieldArgs didn't return an error with parameter: %v", bogus)
+		t.Error("parseFieldArgs didn't return an error with empty parameter")
 	}
 }
