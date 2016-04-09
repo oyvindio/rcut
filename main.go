@@ -75,7 +75,7 @@ func main() {
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
 
-		output := make([]string, len(tokens))
+		output := make([]string, 0)
 		for i, token := range tokens {
 			if ranges[uint(i+1)] {
 				output = append(output, token)
