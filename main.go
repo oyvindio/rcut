@@ -21,6 +21,7 @@ type OutputConfig struct {
 	UnboundedStartingFrom    uint
 	OnlyDelimited            bool
 	OutputDelimiter          string
+	ZeroTerminated           bool
 }
 
 func (oc OutputConfig) ShouldOutputField(field uint) bool {
@@ -31,9 +32,19 @@ func (oc OutputConfig) ShouldOutputField(field uint) bool {
 	}
 }
 
-func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string) (OutputConfig, error) {
+func (oc OutputConfig) GetLineTerminator() string {
+	if oc.ZeroTerminated {
+		return "\u0000"
+	} else {
+		return "\n"
+	}
+}
+
+func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string,
+	zeroTerminated bool) (OutputConfig, error) {
 	args := strings.Split(strings.TrimSpace(f), ",")
-	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited, OutputDelimiter: outputDelimiter}
+	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited,
+		OutputDelimiter: outputDelimiter, ZeroTerminated: zeroTerminated}
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		switch {
@@ -83,6 +94,7 @@ func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string) (O
 }
 
 func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp) {
+	delimiter := oc.GetLineTerminator()
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
@@ -97,7 +109,7 @@ func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp)
 				output = append(output, token)
 			}
 		}
-		fmt.Println(strings.Join(output, oc.OutputDelimiter))
+		fmt.Printf("%s%s", strings.Join(output, oc.OutputDelimiter), delimiter)
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -112,20 +124,25 @@ func die(format string, args ...interface{}) {
 
 var regex = flag.String("regex", `\s+`, "Regex to split lines on.")
 var fields = flag.String("fields", "1", "Field(s) to output.")
-var onlyDelimited = flag.Bool("only-delimited", false, "Do not print lines that do not contain the field separator character.")
+var onlyDelimited = flag.Bool("only-delimited", false,
+	"Do not print lines that do not contain the field separator character.")
 var outputDelimiter = flag.String("output-delimiter", " ", "Delimiter to use when outputting fields.")
+var zeroTerminated = flag.Bool("zero-terminated", false,
+	"Terminate output items with a NUL byte rather than a newline.")
 var filenames []string
 
 func init() {
 	flag.StringVar(regex, "r", `\s+`, "Regex to split lines on.")
 	flag.StringVar(fields, "f", "1", "Field(s) to output.")
-	flag.BoolVar(onlyDelimited, "o", false, "Do not print lines that do not contain the field separator character.")
+	flag.BoolVar(onlyDelimited, "o", false,
+		"Do not print lines that do not contain the field separator character.")
+	flag.BoolVar(zeroTerminated, "z", false, "Terminate output items with a NUL byte rather than a newline.")
 	flag.Parse()
 	filenames = flag.Args()
 }
 
 func main() {
-	oc, err := createOutputConfig(*fields, *onlyDelimited, *outputDelimiter)
+	oc, err := createOutputConfig(*fields, *onlyDelimited, *outputDelimiter, *zeroTerminated)
 	if err != nil {
 		die("Invalid field(s): %q\n", *fields)
 	}
