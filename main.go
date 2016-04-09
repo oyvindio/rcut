@@ -11,8 +11,6 @@ import (
 	"strings"
 )
 
-var r, f string
-var filenames []string
 var startEndRe = regexp.MustCompile("^([0-9]+)-([0-9]+)$")
 var startRe = regexp.MustCompile("^([0-9]+)-$")
 var endRe = regexp.MustCompile("^-([0-9+])$")
@@ -106,23 +104,26 @@ func die(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
+var regex = flag.String("-regex", `\s+`, "Regex to split lines on.")
+var fields = flag.String("-fields", "1", "Field(s) to output.")
+var filenames []string
+
 func init() {
-	// TODO: long flags http://stackoverflow.com/a/19762274/37208
-	flag.StringVar(&r, "r", `\s+`, "Regex to split lines on.")
-	flag.StringVar(&f, "f", "1", "Field(s) to output.")
+	flag.StringVar(regex, "r", `\s+`, "Regex to split lines on.")
+	flag.StringVar(fields, "f", "1", "Field(s) to output.")
 	flag.Parse()
 	filenames = flag.Args()
 }
 
 func main() {
-	oc, err := createOutputConfig(f)
+	oc, err := createOutputConfig(*fields)
 	if err != nil {
-		die("Invalid field(s): %q\n", f)
+		die("Invalid field(s): %q\n", *fields)
 	}
 
-	re, err := regexp.Compile(r)
+	re, err := regexp.Compile(*regex)
 	if err != nil {
-		die("Invalid regex: %q\n", r)
+		die("Invalid regex: %q\n", *regex)
 	}
 
 	if len(filenames) == 0 || (len(filenames) == 1 && filenames[0] == "-") {
