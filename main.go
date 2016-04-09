@@ -124,7 +124,11 @@ func die(format string, args ...interface{}) {
 }
 
 var regex = flag.String("regex", `\s+`, "Regex to split lines on.")
-var fields = flag.String("fields", "1", "Field(s) to output.")
+var fields = flag.String("fields", "1", "Field(s) to output. Should be a comma-separated list of the following:\n"+
+	" N    N'th field, counted from 1\n"+
+	" N-   from N'th field to end of line\n"+
+	" N-M  from N'th to M'th (included) field\n"+
+	" -M   from first to M'th (included) field\n")
 var onlyDelimited = flag.Bool("only-delimited", false,
 	"Do not print lines that do not contain the field separator character.")
 var outputDelimiter = flag.String("output-delimiter", " ", "Delimiter to use when outputting fields.")
