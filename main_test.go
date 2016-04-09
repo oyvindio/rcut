@@ -6,7 +6,7 @@ import (
 
 func TestParseFieldArgsHappyDay(t *testing.T) {
 	param := "1,2-,3-4,42,1337-1340"
-	oc, err := createOutputConfig(param)
+	oc, err := createOutputConfig(param, false, " ", false)
 	if err != nil {
 		t.Errorf("createOutputConfig(%s) returned an error: %v\n", param, err)
 	}
@@ -19,7 +19,7 @@ func TestParseFieldArgsHappyDay(t *testing.T) {
 
 func TestParseFieldArgsSingle(t *testing.T) {
 	param := "1"
-	oc, err := createOutputConfig(param)
+	oc, err := createOutputConfig(param, false, " ", false)
 	if err != nil {
 		t.Errorf("createOutputConfig(%s) returned an error: %v\n", param, err)
 	}
@@ -29,20 +29,21 @@ func TestParseFieldArgsSingle(t *testing.T) {
 }
 
 func TestParseFieldArgsStart(t *testing.T) {
-	oc, err := createOutputConfig("1-")
+	param := "1-"
+	oc, err := createOutputConfig(param, false, " ", false)
 	if err != nil {
 		t.Errorf("createOutputConfig returned an error: %v\n", err)
 	}
 	for i := uint(1); i <= 10; i++ {
 		if !oc.ShouldOutputField(i) {
-			t.Errorf("-f 1- did not include field %d", i)
+			t.Errorf("-f %s did not include field %d", param, i)
 		}
 	}
 }
 
 func TestParseFieldArgsEnd(t *testing.T) {
 	param := "-3"
-	oc, err := createOutputConfig(param)
+	oc, err := createOutputConfig(param, false, " ", false)
 	if err != nil {
 		t.Errorf("createOutputConfig(%s) returned an error: %v\n", param, err)
 	}
@@ -61,7 +62,7 @@ func TestParseFieldArgsEnd(t *testing.T) {
 
 func TestParseFieldArgsStartEnd(t *testing.T) {
 	param := "3-5"
-	oc, err := createOutputConfig(param)
+	oc, err := createOutputConfig(param, false, " ", false)
 	if err != nil {
 		t.Errorf("createOutputConfig(%s) returned an error: %v\n", param, err)
 	}
@@ -84,7 +85,7 @@ func TestParseFieldArgsStartEnd(t *testing.T) {
 
 func TestParseFieldArgsNotAnInt(t *testing.T) {
 	bogus := "bogus args"
-	_, err := createOutputConfig(bogus)
+	_, err := createOutputConfig(bogus, false, " ", false)
 	if err == nil {
 		t.Errorf("createOutputConfig didn't return an error with parameter: %v\n", bogus)
 	}
@@ -92,7 +93,7 @@ func TestParseFieldArgsNotAnInt(t *testing.T) {
 
 func TestParseFieldArgsEmpty(t *testing.T) {
 	bogus := ""
-	_, err := createOutputConfig(bogus)
+	_, err := createOutputConfig(bogus, false, " ", false)
 	if err == nil {
 		t.Error("createOutputConfig didn't return an error with empty parameter\n")
 	}

@@ -45,6 +45,7 @@ func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string,
 	args := strings.Split(strings.TrimSpace(f), ",")
 	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited,
 		OutputDelimiter: outputDelimiter, ZeroTerminated: zeroTerminated}
+
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		switch {
