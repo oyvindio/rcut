@@ -11,7 +11,8 @@ import (
 	"strings"
 )
 
-var r, f, filename string
+var r, f string
+var filenames []string
 var startEndRe = regexp.MustCompile("^([0-9]+)-([0-9]+)$")
 var startRe = regexp.MustCompile("^([0-9]+)-$")
 var endRe = regexp.MustCompile("^-([0-9+])$")
@@ -81,39 +82,7 @@ func createOutputConfig(f string) (OutputConfig, error) {
 	return oc, nil
 }
 
-func die(format string, args ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, args)
-	os.Exit(1)
-}
-
-func init() {
-	// TODO: long flags http://stackoverflow.com/a/19762274/37208
-	flag.StringVar(&r, "r", `\s+`, "Regex to split lines on.")
-	flag.StringVar(&f, "f", "1", "Field(s) to output.")
-	flag.Parse()
-	filename = flag.Arg(0)
-}
-
-func main() {
-	oc, err := createOutputConfig(f)
-	if err != nil {
-		die("Invalid field(s): %q\n", f)
-	}
-
-	re, err := regexp.Compile(r)
-	if err != nil {
-		die("Invalid regex: %q\n", r)
-	}
-
-	var reader io.Reader
-	if filename == "" || filename == "-" {
-		reader = os.Stdin
-	} else {
-		reader, err = os.Open(filename)
-		if err != nil {
-			die("Could not open %v\n", filename, err)
-		}
-	}
+func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp) {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
@@ -130,5 +99,41 @@ func main() {
 	if err := scanner.Err(); err != nil {
 		die("Could not read: %v\n", err)
 	}
+}
 
+func die(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args)
+	os.Exit(1)
+}
+
+func init() {
+	// TODO: long flags http://stackoverflow.com/a/19762274/37208
+	flag.StringVar(&r, "r", `\s+`, "Regex to split lines on.")
+	flag.StringVar(&f, "f", "1", "Field(s) to output.")
+	flag.Parse()
+	filenames = flag.Args()
+}
+
+func main() {
+	oc, err := createOutputConfig(f)
+	if err != nil {
+		die("Invalid field(s): %q\n", f)
+	}
+
+	re, err := regexp.Compile(r)
+	if err != nil {
+		die("Invalid regex: %q\n", r)
+	}
+
+	if len(filenames) == 0 || (len(filenames) == 1 && filenames[0] == "-") {
+		printFieldsFromReader(os.Stdin, oc, re)
+	} else {
+		for _, filename := range filenames {
+			reader, err := os.Open(filename)
+			if err != nil {
+				die("Could not open %v\n", filename, err)
+			}
+			printFieldsFromReader(reader, oc, re)
+		}
+	}
 }
