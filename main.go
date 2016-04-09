@@ -20,6 +20,7 @@ type OutputConfig struct {
 	HasUnboundedStartingFrom bool
 	UnboundedStartingFrom    uint
 	OnlyDelimited            bool
+	OutputDelimiter          string
 }
 
 func (oc OutputConfig) ShouldOutputField(field uint) bool {
@@ -30,9 +31,9 @@ func (oc OutputConfig) ShouldOutputField(field uint) bool {
 	}
 }
 
-func createOutputConfig(f string, onlyDelimited bool) (OutputConfig, error) {
+func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string) (OutputConfig, error) {
 	args := strings.Split(strings.TrimSpace(f), ",")
-	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited}
+	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited, OutputDelimiter: outputDelimiter}
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		switch {
@@ -96,7 +97,7 @@ func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp)
 				output = append(output, token)
 			}
 		}
-		fmt.Println(strings.Join(output, " "))
+		fmt.Println(strings.Join(output, oc.OutputDelimiter))
 	}
 
 	if err := scanner.Err(); err != nil {
@@ -109,9 +110,10 @@ func die(format string, args ...interface{}) {
 	os.Exit(1)
 }
 
-var regex = flag.String("-regex", `\s+`, "Regex to split lines on.")
-var fields = flag.String("-fields", "1", "Field(s) to output.")
-var onlyDelimited = flag.Bool("-only-delimited", false, "Do not print lines that do not contain the field separator character.")
+var regex = flag.String("regex", `\s+`, "Regex to split lines on.")
+var fields = flag.String("fields", "1", "Field(s) to output.")
+var onlyDelimited = flag.Bool("only-delimited", false, "Do not print lines that do not contain the field separator character.")
+var outputDelimiter = flag.String("output-delimiter", " ", "Delimiter to use when outputting fields.")
 var filenames []string
 
 func init() {
@@ -123,7 +125,7 @@ func init() {
 }
 
 func main() {
-	oc, err := createOutputConfig(*fields, *onlyDelimited)
+	oc, err := createOutputConfig(*fields, *onlyDelimited, *outputDelimiter)
 	if err != nil {
 		die("Invalid field(s): %q\n", *fields)
 	}
