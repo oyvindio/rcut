@@ -19,6 +19,7 @@ type OutputConfig struct {
 	Fields                   map[uint]bool
 	HasUnboundedStartingFrom bool
 	UnboundedStartingFrom    uint
+	OnlyDelimited            bool
 }
 
 func (oc OutputConfig) ShouldOutputField(field uint) bool {
@@ -29,9 +30,9 @@ func (oc OutputConfig) ShouldOutputField(field uint) bool {
 	}
 }
 
-func createOutputConfig(f string) (OutputConfig, error) {
+func createOutputConfig(f string, onlyDelimited bool) (OutputConfig, error) {
 	args := strings.Split(strings.TrimSpace(f), ",")
-	var oc = OutputConfig{Fields: make(map[uint]bool)}
+	var oc = OutputConfig{Fields: make(map[uint]bool), OnlyDelimited: onlyDelimited}
 	for _, arg := range args {
 		arg = strings.TrimSpace(arg)
 		switch {
@@ -85,6 +86,10 @@ func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp)
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
 
+		if len(tokens) == 1 && oc.OnlyDelimited {
+			continue
+		}
+
 		output := make([]string, 0)
 		for i, token := range tokens {
 			if oc.ShouldOutputField(uint(i + 1)) {
@@ -106,17 +111,19 @@ func die(format string, args ...interface{}) {
 
 var regex = flag.String("-regex", `\s+`, "Regex to split lines on.")
 var fields = flag.String("-fields", "1", "Field(s) to output.")
+var onlyDelimited = flag.Bool("-only-delimited", false, "Do not print lines that do not contain the field separator character.")
 var filenames []string
 
 func init() {
 	flag.StringVar(regex, "r", `\s+`, "Regex to split lines on.")
 	flag.StringVar(fields, "f", "1", "Field(s) to output.")
+	flag.BoolVar(onlyDelimited, "o", false, "Do not print lines that do not contain the field separator character.")
 	flag.Parse()
 	filenames = flag.Args()
 }
 
 func main() {
-	oc, err := createOutputConfig(*fields)
+	oc, err := createOutputConfig(*fields, *onlyDelimited)
 	if err != nil {
 		die("Invalid field(s): %q\n", *fields)
 	}
