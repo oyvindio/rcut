@@ -10,6 +10,7 @@ import (
 	"strings"
 )
 
+var r, f string
 var startEndRe = regexp.MustCompile("^([0-9]+)-([0-9]+)$")
 var startRe = regexp.MustCompile("^([0-9]+)-$")
 
@@ -52,21 +53,23 @@ func parseFieldArgs(f string) (map[uint]bool, error) {
 	return ranges, nil
 }
 
-func main() {
+func init() {
 	// TODO: long flags http://stackoverflow.com/a/19762274/37208
-	r := flag.String("r", "", "Regex to split lines on")
-	f := flag.String("f", "1", "Field(s) to output. Default: 1")
+	flag.StringVar(&r, "r", "", "Regex to split lines on")
+	flag.StringVar(&f, "f", "1", "Field(s) to output. Default: 1")
 	flag.Parse()
+}
 
-	ranges, err := parseFieldArgs(*f)
+func main() {
+	ranges, err := parseFieldArgs(f)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Invalid field(s): %s", f)
+		fmt.Fprintf(os.Stderr, "Invalid field(s): %s\n", f)
 		os.Exit(1)
 	}
 
-	re, err := regexp.Compile(*r)
+	re, err := regexp.Compile(r)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Invalid regex: %s", r)
+		fmt.Fprintf(os.Stderr, "Invalid regex: %s\n", r)
 		os.Exit(1)
 	}
 
