@@ -95,7 +95,7 @@ func createOutputConfig(f string, onlyDelimited bool, outputDelimiter string,
 }
 
 func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp) {
-	delimiter := oc.GetLineTerminator()
+	lineTerminator := oc.GetLineTerminator()
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
@@ -110,7 +110,7 @@ func printFieldsFromReader(reader io.Reader, oc OutputConfig, re *regexp.Regexp)
 				output = append(output, token)
 			}
 		}
-		fmt.Printf("%s%s", strings.Join(output, oc.OutputDelimiter), delimiter)
+		fmt.Print(strings.Join(output, oc.OutputDelimiter) + lineTerminator)
 	}
 
 	if err := scanner.Err(); err != nil {
