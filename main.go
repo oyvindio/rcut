@@ -4,13 +4,14 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
-var r, f string
+var r, f, filename string
 var startEndRe = regexp.MustCompile("^([0-9]+)-([0-9]+)$")
 var startRe = regexp.MustCompile("^([0-9]+)-$")
 var endRe = regexp.MustCompile("^-([0-9+])$")
@@ -80,28 +81,40 @@ func createOutputConfig(f string) (OutputConfig, error) {
 	return oc, nil
 }
 
+func die(format string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, format, args)
+	os.Exit(1)
+}
+
 func init() {
 	// TODO: long flags http://stackoverflow.com/a/19762274/37208
 	flag.StringVar(&r, "r", `\s+`, "Regex to split lines on.")
 	flag.StringVar(&f, "f", "1", "Field(s) to output.")
 	flag.Parse()
+	filename = flag.Arg(0)
 }
 
 func main() {
 	oc, err := createOutputConfig(f)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid field(s): %s\n", f)
-		os.Exit(1)
+		die("Invalid field(s): %q\n", f)
 	}
 
 	re, err := regexp.Compile(r)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid regex: %s\n", r)
-		os.Exit(1)
+		die("Invalid regex: %q\n", r)
 	}
 
-	// TODO: handle file input if stdin is empty and we have a positional arg
-	scanner := bufio.NewScanner(os.Stdin)
+	var reader io.Reader
+	if filename == "" || filename == "-" {
+		reader = os.Stdin
+	} else {
+		reader, err = os.Open(filename)
+		if err != nil {
+			die("Could not open %v\n", filename, err)
+		}
+	}
+	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		tokens := re.Split(scanner.Text(), -1)
 
@@ -115,7 +128,7 @@ func main() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Fprintln(os.Stderr, "Could not read:", err)
+		die("Could not read: %v\n", err)
 	}
 
 }
